@@ -8,7 +8,8 @@ import streamlit.components.v1 as components
 import matplotlib.pyplot as plt
 import plotly.express as px
 import seaborn as sns
-
+from st_aggrid import AgGrid,GridUpdateMode, JsCode
+from st_aggrid.grid_options_builder import GridOptionsBuilder
 
 st.set_page_config(layout="wide")
 
@@ -45,11 +46,6 @@ st.markdown(
     )
 
 
-
-def color_survived(val):
-    color = 'red' if val=="Ended Not OK" else 'pink' if val in ("Wait User", "Wait Condition") else 'lightblue' if val == 'Executing' else 'green'
-    return f'background-color: {color}'
-
 td_data = pd.read_csv('ctm-logs.csv')
 rgn_data = pd.read_csv('regions.csv')
 
@@ -66,8 +62,10 @@ image = Image.open('Delllogo2.png')
 st.sidebar.image(image)
 st.sidebar.header('Order Jobs Status')
 
-ord_dates = sorted(list(set(logs_data['orderDate'])), reverse=True)
+ord_dates = sorted(list(logs_data['orderDate'].unique()))
 choice = st.sidebar.selectbox("Order Date", ord_dates)
+
+
 
 logs_data = logs_data[logs_data['orderDate']==choice]
 
@@ -310,17 +308,49 @@ def main():
             mylst = mylst1.dropna(subset=['job_name'])
             
 
+    mylst.rename(columns = {'job_name':'JOB NAME', 'status':'STATUS',
+                'startTime': 'START TIME', 'endTime':'END TIME',
+                'estimatedStartTime':'ESTIMATED START TIME', 'estimatedEndTime':'ESTIMATED END TIME'}, inplace = True)
 
-    tot_rows = len(mylst.index)
-    tot_rows_lst = list(' '*tot_rows)
-
-    tooltips_df = pd.DataFrame({
-    'orer_id': tot_rows_lst,
-    'job_name': logs_data.description, 
-        })
-
-    st.write(mylst.style.applymap(color_survived, subset=["status"]))
-
+    
+    
+    cellstyle_jscode = JsCode("""
+        function(params){
+            if (params.value == 'Ended OK') {
+                return {
+                    'color': 'white',
+                    'backgroundColor' : 'green'
+            }
+            }
+            if (params.value == 'Ended Not OK') {
+                return{
+                    'color'  : 'white',
+                    'backgroundColor' : 'red'
+                }
+            }
+            if (params.value == 'Executing') {
+                return{
+                    'color'  : 'black',
+                    'backgroundColor' : 'orange'
+                }
+            }
+            else{
+                return{
+                    'color': 'black',
+                    'backgroundColor': 'lightpink'
+                }
+            }
+           
+    };
+    """)
+    
+    gd = GridOptionsBuilder.from_dataframe(mylst)
+    gd.configure_pagination(enabled=True)
+    gd.configure_columns("STATUS", cellStyle=cellstyle_jscode)
+    gridoptions = gd.build()
+    grid_table = AgGrid(mylst, gridOptions=gridoptions, update_mode=GridUpdateMode.SELECTION_CHANGED, height=400,
+                allow_unsafe_jscode=True,theme='dark')
+    
 
 
 main()
