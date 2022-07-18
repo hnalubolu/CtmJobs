@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 import matplotlib.pyplot as plt
 import plotly.express as px
 import seaborn as sns
-from st_aggrid import AgGrid,GridUpdateMode, JsCode
+from st_aggrid import AgGrid,GridUpdateMode,JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 
 st.set_page_config(layout="wide")
@@ -348,7 +348,7 @@ def main():
     gd.configure_pagination(enabled=True)
     gd.configure_columns("STATUS", cellStyle=cellstyle_jscode)
     gridoptions = gd.build()
-    grid_table = AgGrid(mylst, gridOptions=gridoptions, update_mode=GridUpdateMode.SELECTION_CHANGED, height=400,
+    AgGrid(mylst, gridOptions=gridoptions, update_mode=GridUpdateMode.SELECTION_CHANGED, height=400,
                 allow_unsafe_jscode=True,theme='dark')
     
 
